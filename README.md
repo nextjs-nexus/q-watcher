@@ -42,7 +42,7 @@ The landing page and account flows are public. Browsing and title-detail routes 
 3. Preference writes validate the Better Auth session, media identifier, media type, and rating before updating the database. Successful writes revalidate the list and relevant detail page.
 4. TMDB fetches use a one-hour revalidation interval. User preferences are read separately from the catalog data.
 
-`proxy.ts` checks whether `better-auth.session_token` is present and redirects unauthenticated requests to `/signin`. It also redirects requests to `/signin` with that cookie to `/list`. This is a routing check; preference writes perform a separate server-side session validation. It does not forward requests to TMDB or act as an external API proxy.
+`proxy.ts` checks whether `better-auth.session_token` or its HTTPS-prefixed `__Secure-better-auth.session_token` variant is present and redirects unauthenticated requests to `/signin`. It also redirects requests to `/signin` with that cookie to `/list`. This is a routing check; preference writes perform a separate server-side session validation. It does not forward requests to TMDB or act as an external API proxy.
 
 Catalog operations use Server Actions and shared server-side helpers. The app's HTTP API route is the Better Auth handler; it does not expose a separate public movie REST API.
 
@@ -229,9 +229,10 @@ npm start
 
 The app requires a server runtime for authentication, Server Actions, SMTP, and database access. It cannot be deployed as a static-only export.
 
-Before publishing, update the hardcoded `https://localhost:3000` base URL in `app/sitemap.ts` to your public origin; the sitemap currently does not read the application URL environment variable.
+The sitemap uses `NEXT_PUBLIC_APP_URL` as its base URL. Set it to your public HTTPS origin before building for production.
 
 ## Data sources
 
 Movie and TV metadata and artwork come from TMDB. Trailer thumbnails come from YouTube, and trailer links open YouTube in a new tab. Personal watch statuses and ratings are stored separately in the application's MariaDB database.
+
 

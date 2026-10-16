@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export async function proxy(request: NextRequest) {
-  const session = request.cookies.get('better-auth.session_token');
+  const session = request.cookies.get('__Secure-better-auth.session_token')
+    || request.cookies.get('better-auth.session_token');
   
   // Public paths that don't require authentication
   const publicPaths = [
