@@ -27,6 +27,7 @@ test('SMTP auth emails enforce TLS, escape links, and report delivery failures s
     const create = mock.method(nodemailer, 'createTransport', () => transport);
     const send = mock.method(transport, 'sendMail', async (): Promise<{ accepted: string[]; rejected: string[] }> => ({ accepted: ['test@example.com'], rejected: [] }));
     const close = mock.method(transport, 'close', () => {});
+    const log = mock.method(console, 'error', () => {});
     const url = 'https://example.com/verify?token=test&callbackURL="example"';
     await sendAuthEmail('test@example.com', url, 'verify');
     const options = create.mock.calls[0].arguments[0] as { secure: boolean; tls: { rejectUnauthorized: boolean } };
@@ -38,8 +39,25 @@ test('SMTP auth emails enforce TLS, escape links, and report delivery failures s
     assert.equal(close.mock.callCount(), 1);
     await sendAuthEmail('test@example.com', url, 'reset');
     assert.match(String((send.mock.calls[1].arguments[0] as SendMailOptions).subject), /Reset your password/);
-    send.mock.mockImplementation(async () => { throw new Error('private credentials and server response'); });
+    send.mock.mockImplementation(async () => {
+      throw Object.assign(new Error('private credentials and server response'), {
+        code: 'EAUTH', command: 'AUTH PLAIN', responseCode: 535,
+        response: 'private SMTP response with credentials',
+      });
+    });
     await assert.rejects(sendAuthEmail('test@example.com', url, 'reset'), { message: 'Unable to send the authentication email through SMTP.' });
+    assert.deepEqual(log.mock.calls.at(-1)?.arguments, [
+      'Authentication email SMTP failure',
+      { code: 'EAUTH', command: 'AUTH PLAIN', responseCode: 535 },
+    ]);
+    send.mock.mockImplementation(async () => {
+      throw { code: 'private-password', command: 'AUTH private-password', responseCode: 'private-password' };
+    });
+    await assert.rejects(sendAuthEmail('test@example.com', url, 'reset'), /Unable to send/);
+    assert.deepEqual(log.mock.calls.at(-1)?.arguments, [
+      'Authentication email SMTP failure',
+      { code: 'UNKNOWN', command: 'UNKNOWN', responseCode: null },
+    ]);
     send.mock.mockImplementation(async () => ({ accepted: [], rejected: ['test@example.com'] }));
     await assert.rejects(sendAuthEmail('test@example.com', url, 'verify'), /Unable to send/);
     process.env.SMTP_PORT = '587';

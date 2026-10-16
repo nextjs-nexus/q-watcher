@@ -36,8 +36,33 @@ export async function sendAuthEmail(to: string, url: string, kind: "verify" | "r
     if (!result.accepted?.length || result.rejected?.length) {
       throw new Error("Recipient rejected");
     }
-  } catch {
-    // Do not expose SMTP responses, credentials, recipients, or reset tokens.
+  } catch (error: unknown) {
+    const failure = error && typeof error === "object"
+      ? error as { code?: unknown; command?: unknown; responseCode?: unknown }
+      : {};
+    const codes = [
+      "EAUTH", "ECONNECTION", "ETIMEDOUT", "ESOCKET", "EDNS", "EENVELOPE",
+      "EMESSAGE", "ESTREAM", "EPROTOCOL", "ETLS", "ECONNREFUSED", "ENOTFOUND",
+      "ECONNRESET",
+    ];
+    const commands = [
+      "CONN", "EHLO", "HELO", "STARTTLS", "AUTH PLAIN", "AUTH LOGIN",
+      "AUTH XOAUTH2", "MAIL FROM", "RCPT TO", "DATA",
+    ];
+    // Allow only diagnostic categories; never log the error object or raw response.
+    console.error("Authentication email SMTP failure", {
+      code: typeof failure.code === "string" && codes.includes(failure.code)
+        ? failure.code
+        : "UNKNOWN",
+      command: typeof failure.command === "string" && commands.includes(failure.command)
+        ? failure.command
+        : "UNKNOWN",
+      responseCode: typeof failure.responseCode === "number"
+        && Number.isInteger(failure.responseCode)
+        && failure.responseCode >= 400 && failure.responseCode <= 599
+        ? failure.responseCode
+        : null,
+    });
     throw new Error("Unable to send the authentication email through SMTP.");
   } finally {
     transporter.close();
