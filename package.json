@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:hostinger": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
     "test": "node --import tsx --test tests/*.test.ts",
@@ -44,3 +45,4 @@
     "unrs-resolver@1.11.1": true
   }
 }
+

@@ -175,6 +175,7 @@ Genre filtering applies to discovery and saved lists. Catalog text searches use 
 | --- | --- |
 | `npm run dev` | Start the development server |
 | `npm run build` | Build for production |
+| `npm run build:hostinger` | Build with Webpack for hosts that need the SWC WebAssembly fallback |
 | `npm start` | Run the production build |
 | `npm run lint` | Run ESLint |
 | `npm test` | Run the automated tests; database integration checks are skipped by default |
@@ -234,5 +235,6 @@ The sitemap uses `NEXT_PUBLIC_APP_URL` as its base URL. Set it to your public HT
 ## Data sources
 
 Movie and TV metadata and artwork come from TMDB. Trailer thumbnails come from YouTube, and trailer links open YouTube in a new tab. Personal watch statuses and ratings are stored separately in the application's MariaDB database.
+
 
 
