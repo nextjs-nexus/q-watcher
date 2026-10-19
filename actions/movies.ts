@@ -5,19 +5,21 @@ import { fetchListMovies } from '@/lib/list-movies';
 import { addCurrentUserPreferences } from '@/lib/media-preferences';
 
 export async function loadMoreMoviesAction({
+  actor = '',
   query = '',
   genre = '',
   type = '1',
   page = 1,
   status = 'all',
 }: {
+  actor?: string;
   query?: string;
   genre?: string;
   type?: string;
   page?: number;
   status?: string;
 }): Promise<FetchMoviesResult> {
-  const result = await fetchListMovies({ query, genre, type, page, status });
+  const result = await fetchListMovies({ actor, query, genre, type, page, status });
 
   return result;
 }

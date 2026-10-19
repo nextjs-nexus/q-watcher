@@ -62,6 +62,30 @@ export interface FetchMoviesResult {
     totalResults: number;
 }
 
+export interface Actor {
+    id: number;
+    name: string;
+    known_for: { title?: string; name?: string }[];
+}
+
+export async function searchActors(query: string): Promise<Actor[]> {
+    const data: { results: Actor[] } = await fetchFromTMDB(`/search/person?query=${encodeURIComponent(query.trim())}`);
+    return data.results || [];
+}
+
+export async function getActorCredits(actor: string, type = '0'): Promise<Movie[]> {
+    if (!/^[1-9]\d*$/.test(actor)) throw new Error('Invalid actor ID');
+    const data: { cast: Movie[] } = await fetchFromTMDB(`/person/${actor}/combined_credits`);
+    const normalized = toFetchMoviesResult({ results: data.cast || [], page: 1, total_pages: 1, total_results: 0 }).movies;
+    const unique = new Map<string, Movie>();
+    for (const movie of normalized) {
+        if (type === '1' && movie.media_type !== 'movie') continue;
+        if (type === '2' && movie.media_type !== 'tv') continue;
+        unique.set(`${movie.media_type}-${movie.id}`, movie);
+    }
+    return [...unique.values()].sort((a, b) => b.vote_average - a.vote_average || a.id - b.id);
+}
+
 async function fetchFromTMDB(endpoint: string, page: number = 1) {
     if (!API_KEY) throw new Error('API Key is missing');
 

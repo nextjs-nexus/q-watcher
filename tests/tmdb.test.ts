@@ -2,10 +2,12 @@ import assert from 'node:assert/strict';
 import { before, test } from 'node:test';
 
 process.env.NEXT_PUBLIC_TMDB_API_KEY = 'test-key';
+let getActorCredits: typeof import('../lib/tmdb').getActorCredits;
+let searchActors: typeof import('../lib/tmdb').searchActors;
 let fetchMovies: typeof import('../lib/tmdb').fetchMovies;
 let getMediaTrailers: typeof import('../lib/tmdb').getMediaTrailers;
 before(async () => {
-    ({ fetchMovies, getMediaTrailers } = await import('../lib/tmdb'));
+    ({ fetchMovies, getMediaTrailers, getActorCredits, searchActors } = await import('../lib/tmdb'));
 });
 const requests: URL[] = [];
 
@@ -23,6 +25,16 @@ globalThis.fetch = async (input) => {
             { ...trailer, id: '5', key: 'abcdefghij3', type: 'Clip' },
             { ...trailer, id: '6', key: '' },
         ] });
+    }
+    if (url.pathname.endsWith('/person')) {
+        return Response.json({ results: [{ id: 3, name: 'Harrison Ford', known_for: [] }] });
+    }
+    if (url.pathname.endsWith('/combined_credits')) {
+        const movie = { id: 42, title: 'Movie', media_type: 'movie', vote_average: 8 };
+        return Response.json({
+            cast: [movie, movie, { id: 42, name: 'Show', media_type: 'tv', vote_average: 9 }],
+            crew: [{ id: 99, title: 'Crew only', media_type: 'movie' }],
+        });
     }
     const isTV = url.pathname.includes('/tv');
     const item = isTV
@@ -111,4 +123,23 @@ test('genre browsing requests highest ratings first on initial and subsequent pa
             }
         }
     }
+});
+
+test('actor search encodes partial names and returns matching people', async () => {
+    requests.length = 0;
+    const actors = await searchActors(' Ford ');
+    assert.equal(requests[0].pathname, '/3/search/person');
+    assert.equal(requests[0].searchParams.get('query'), 'Ford');
+    assert.equal(actors[0].name, 'Harrison Ford');
+});
+
+test('acting credits exclude crew, deduplicate roles, retain overlapping media IDs and honor type', async () => {
+    const credits = await getActorCredits('3');
+    assert.deepEqual(credits.map((item) => [item.id, item.media_type, item.title]), [
+        [42, 'tv', 'Show'],
+        [42, 'movie', 'Movie'],
+    ]);
+    assert.equal((await getActorCredits('3', '1'))[0].media_type, 'movie');
+    assert.equal((await getActorCredits('3', '2'))[0].media_type, 'tv');
+    await assert.rejects(getActorCredits('../3'));
 });

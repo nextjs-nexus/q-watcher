@@ -1,6 +1,6 @@
 'use client';
 
-import { Search } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef } from 'react';
 
@@ -24,8 +24,13 @@ export default function SearchBar() {
     }, [query]);
 
     const handleSearch = (term: string) => {
+        if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current);
+            timeoutRef.current = null;
+        }
         const params = new URLSearchParams(searchParams);
         params.delete('page');
+        params.delete('actor');
         if (term.trim()) {
             params.set('query', term.trim());
         } else {
@@ -39,9 +44,21 @@ export default function SearchBar() {
         if (timeoutRef.current) {
             clearTimeout(timeoutRef.current);
         }
+        if (!value.trim()) {
+            handleSearch('');
+            return;
+        }
         timeoutRef.current = setTimeout(() => {
             handleSearch(value);
         }, 500);
+    };
+
+    const clearSearch = () => {
+        if (inputRef.current) {
+            inputRef.current.value = '';
+            inputRef.current.focus();
+        }
+        handleSearch('');
     };
 
     return (
@@ -52,11 +69,19 @@ export default function SearchBar() {
             <input
                 ref={inputRef}
                 type="text"
-                className="block w-full p-3 pl-10 text-sm border rounded-lg bg-[#0B1410] border-[#B6FF3C]/20 placeholder-[#6B7F75] text-white focus:ring-[#B6FF3C] focus:border-[#B6FF3C]"
-                placeholder="Search for..."
+                className="block w-full p-3 pl-10 pr-12 text-sm border rounded-lg bg-[#0B1410] border-[#B6FF3C]/20 placeholder-[#6B7F75] text-white focus:ring-[#B6FF3C] focus:border-[#B6FF3C]"
+                placeholder="Search titles or actors..." aria-label="Search titles or actors"
                 onChange={handleChange}
                 defaultValue={searchParams.get('query')?.toString() || ''}
             />
+            <button
+                type="button"
+                onClick={clearSearch}
+                aria-label="Clear search"
+                className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-lg text-[#A0B3A8] hover:text-[#B6FF3C] focus-visible:outline-2 focus-visible:outline-[#B6FF3C]"
+            >
+                <X className="h-4 w-4" aria-hidden="true" />
+            </button>
         </div>
     );
 }

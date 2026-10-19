@@ -11,6 +11,7 @@ import { readBrowsingState, saveBrowsingState } from '@/lib/browsing-state';
 interface MovieListProps {
   initialMovies: Movie[];
   initialTotalPages: number;
+  actor?: string;
   query?: string;
   genre?: string;
   type?: string;
@@ -20,6 +21,7 @@ interface MovieListProps {
 export default function MovieList({
   initialMovies,
   initialTotalPages,
+  actor = '',
   query = '',
   genre = '',
   type = '1',
@@ -99,6 +101,7 @@ export default function MovieList({
 
     try {
       const res = await loadMoreMoviesAction({
+        actor,
         query,
         genre,
         type,
@@ -132,7 +135,7 @@ export default function MovieList({
       setIsLoading(false);
       loadingRef.current = false;
     }
-  }, [query, genre, type, status]);
+  }, [actor, query, genre, type, status]);
 
   useEffect(() => {
     const sentinel = sentinelRef.current;
