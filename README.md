@@ -4,6 +4,10 @@ Discover movies and TV shows, keep track of what you want to watch, and rate wha
 
 Built with **Next.js 16**, **React 19**, **TypeScript**, and **Tailwind CSS 4**.
 
+## Live demo
+
+Try Q-Watcher at [q-watcher.next-nexus.dev](https://q-watcher.next-nexus.dev).
+
 ## Features
 
 - **Movie and TV discovery:** browse top-rated titles, switch between movies, TV shows, or both, and filter by genre.
