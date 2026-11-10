@@ -6,18 +6,33 @@ import { Bookmark, CheckCircle2 } from 'lucide-react';
 import { markMediaPreference } from '@/actions/media-preferences';
 import type { Movie } from '@/lib/tmdb';
 import type { MediaPreference } from '@/lib/media-preferences';
+import type { Viewer } from '@/lib/viewer';
+import GuestNotice from './GuestNotice';
 
-export default function MovieCardPreferenceControls({ movie, onPreferenceChange }: { movie: Movie; onPreferenceChange?: (preference: MediaPreference) => void }) {
+type MovieCardPreferenceControlsProps = {
+  movie: Movie;
+  viewer: Viewer;
+  onPreferenceChange?: (preference: MediaPreference) => void;
+};
+
+export default function MovieCardPreferenceControls({ movie, viewer, onPreferenceChange }: MovieCardPreferenceControlsProps) {
   const preference = {
     toWatch: movie.to_watch ?? false,
     watched: movie.watched ?? false,
     userRating: movie.user_rating ?? null,
   };
   const [message, setMessage] = useState<string | null>(null);
+  const [showGuestNotice, setShowGuestNotice] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   const mark = (status: 'toWatch' | 'watched') => {
     setMessage(null);
+
+    if (!viewer.signedIn) {
+      // Guests can see the buttons, but saving needs an account.
+      setShowGuestNotice(true);
+      return;
+    }
 
     startTransition(async () => {
       try {
@@ -65,6 +80,7 @@ export default function MovieCardPreferenceControls({ movie, onPreferenceChange 
           <CheckCircle2 size={19} />
         </button>
       </div>
+      {showGuestNotice && <GuestNotice demoAvailable={viewer.demoAvailable} compact />}
       <div aria-live="polite" className={message ? 'px-4 pb-3 text-xs text-[#A0B3A8]' : 'sr-only'}>
         {message}
       </div>

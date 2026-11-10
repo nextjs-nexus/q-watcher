@@ -1,6 +1,7 @@
 'use client';
 
 import type { MediaPreference } from '@/lib/media-preferences';
+import type { Viewer } from '@/lib/viewer';
 
 import Image from 'next/image';
 import Link from 'next/link';
@@ -10,6 +11,7 @@ import MovieDetailPreferenceControls from './MovieDetailPreferenceControls';
 
 interface MovieCardProps {
   movie: Movie;
+  viewer: Viewer;
   eager?: boolean;
   returnTo?: string;
   onNavigate?: () => void;
@@ -18,7 +20,7 @@ interface MovieCardProps {
 
 const imageBase = 'https://image.tmdb.org/t/p/w500';
 
-export default function MovieCard({ movie, eager = false, returnTo, onNavigate, onPreferenceChange }: MovieCardProps) {
+export default function MovieCard({ movie, viewer, eager = false, returnTo, onNavigate, onPreferenceChange }: MovieCardProps) {
   const mediaType = movie.media_type === 'tv' ? 'tv' : 'movie';
 
   const detailUrl = `/${mediaType}/${movie.id}${returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : ''}`;
@@ -80,7 +82,7 @@ export default function MovieCard({ movie, eager = false, returnTo, onNavigate, 
           </div>
         </div>
       </Link>
-      <MovieDetailPreferenceControls movie={movie} onPreferenceChange={onPreferenceChange} />
+      <MovieDetailPreferenceControls movie={movie} viewer={viewer} onPreferenceChange={onPreferenceChange} />
     </div>
   );
 }

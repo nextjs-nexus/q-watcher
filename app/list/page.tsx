@@ -1,9 +1,13 @@
 import Link from 'next/link';
+import { Lock } from 'lucide-react';
 import { searchActors } from '@/lib/tmdb';
 import { fetchListMovies } from '@/lib/list-movies';
+import { getViewer } from '@/lib/session';
 import Logo from '@/components/Logo';
 import Header from '@/components/Header';
 import MovieList from '@/components/MovieList';
+import DemoSignInButton from '@/components/DemoSignInButton';
+import SignInLink from '@/components/SignInLink';
 
 
 type Props = {
@@ -17,15 +21,24 @@ export default async function Home({ searchParams }: Props) {
   const type = resolvedSearchParams?.type || '1';
   const genre = resolvedSearchParams?.genre || '';
   const status = resolvedSearchParams?.status || 'all';
+  const viewer = await getViewer();
+  const isPersonalList = status === 'toWatch' || status === 'watched';
+  const showGuestListPrompt = isPersonalList && !viewer.signedIn;
+  const currentListParams = new URLSearchParams(
+    Object.entries(resolvedSearchParams).filter((entry): entry is [string, string] => typeof entry[1] === 'string' && entry[1] !== '')
+  );
+  const currentListPath = `/list?${currentListParams.toString()}`;
 
-  const { movies, totalPages } = await fetchListMovies({
-    actor,
-    query,
-    genre,
-    type,
-    page: 1,
-    status,
-  });
+  const { movies, totalPages } = showGuestListPrompt
+    ? { movies: [], totalPages: 1 }
+    : await fetchListMovies({
+      actor,
+      query,
+      genre,
+      type,
+      page: 1,
+      status,
+    });
 
 
   const actors = query.trim() ? await searchActors(query) : [];
@@ -79,16 +92,39 @@ export default async function Home({ searchParams }: Props) {
         </section>
       )}
 
-      <MovieList
-        key={JSON.stringify([actor, query, genre, type, status])}
-        initialMovies={movies}
-        initialTotalPages={totalPages}
-        actor={actor}
-        query={query}
-        genre={genre}
-        type={type}
-        status={status}
-      />
+      {showGuestListPrompt ? (
+        <section className="mx-auto mt-8 w-full max-w-lg rounded-2xl border border-[#B6FF3C]/20 bg-[#0B1410] p-8 text-center">
+          <Lock size={28} className="mx-auto text-[#B6FF3C]" aria-hidden="true" />
+          <h2 className="mt-4 text-2xl font-semibold">Your lists are waiting</h2>
+          <p className="mt-3 leading-relaxed text-[#A0B3A8]">
+            To Watch and Watched lists are available after you log in.
+            You can keep browsing every movie and TV show without an account.
+          </p>
+          <div className="mt-6 flex flex-col items-center gap-3">
+            <SignInLink className="w-full rounded-lg bg-[#B6FF3C] px-4 py-3 font-semibold text-[#050807] transition hover:bg-[#B6FF3C]/80">
+              Log in
+            </SignInLink>
+            <Link href="/signup" className="w-full rounded-lg border border-white/15 px-4 py-3 font-medium transition hover:border-[#B6FF3C]/50">
+              Sign up free
+            </Link>
+            {viewer.demoAvailable && (
+              <DemoSignInButton next={currentListPath} variant="secondary" />
+            )}
+          </div>
+        </section>
+      ) : (
+        <MovieList
+          key={JSON.stringify([actor, query, genre, type, status])}
+          initialMovies={movies}
+          initialTotalPages={totalPages}
+          viewer={viewer}
+          actor={actor}
+          query={query}
+          genre={genre}
+          type={type}
+          status={status}
+        />
+      )}
     </main>
   );
 }

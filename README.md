@@ -17,10 +17,12 @@ Try Q-Watcher at [q-watcher.next-nexus.dev](https://q-watcher.next-nexus.dev).
 - **Title details:** view posters, backdrops, overviews, genres, release dates, runtimes, and community ratings. TV pages display episode runtime when available.
 - **Trailers:** open YouTube trailers from thumbnail links, with official trailers shown first. Missing trailers do not prevent a detail page from loading.
 - **Continuous browsing:** load additional results automatically as you scroll, and restore loaded titles and scroll position when returning from a detail page.
-- **Accounts:** sign up, verify an email address, sign in, sign out, resend verification emails, and reset a forgotten password.
+- **Open browsing:** anyone can browse, search, filter, and open title details and trailers without an account. Personal-list buttons stay visible and explain that they are available after logging in.
+- **Accounts:** sign up, verify an email address, sign in, sign out, resend verification emails, and reset a forgotten password. After logging in, visitors return to the page they started from.
+- **Shared demo account:** an optional one-click sign-in to an account with sample To Watch and Watched lists. Its data resets daily, and visitors cannot change its email, password, or sessions.
 - **Responsive interface:** a dark theme, adaptive poster grid, optimized images, and Lucide icons.
 
-The landing page and account flows are public. Browsing and title-detail routes require a session cookie. Shared title URLs also require the recipient to sign in.
+The landing page, catalog, title pages, and account flows are public, so shared title URLs open without signing in. To Watch, Watched, and personal ratings require an account.
 
 ## Technical stack
 
@@ -35,7 +37,7 @@ The landing page and account flows are public. Browsing and title-detail routes 
 | Authentication | Better Auth with database-backed accounts and sessions, using Kysely's MySQL dialect |
 | External API | TMDB REST API v3 for discovery, search, title details, and trailer metadata |
 | Authentication API | Next.js Route Handler exposing Better Auth's GET and POST endpoints at `/api/auth/[...all]` |
-| Request routing | Next.js `proxy.ts` for session-cookie checks and authentication redirects |
+| Request routing | Next.js `proxy.ts` for public-route checks and authentication redirects |
 | Email | Nodemailer over SMTP for verification and password-reset messages |
 | Tooling | ESLint 9, Node.js test runner, and `tsx` for TypeScript tests and database scripts |
 
@@ -46,7 +48,7 @@ The landing page and account flows are public. Browsing and title-detail routes 
 3. Preference writes validate the Better Auth session, media identifier, media type, and rating before updating the database. Successful writes revalidate the list and relevant detail page.
 4. TMDB fetches use a one-hour revalidation interval. User preferences are read separately from the catalog data.
 
-`proxy.ts` checks whether `better-auth.session_token` or its HTTPS-prefixed `__Secure-better-auth.session_token` variant is present and redirects unauthenticated requests to `/signin`. It also redirects requests to `/signin` with that cookie to `/list`. This is a routing check; preference writes perform a separate server-side session validation. It does not forward requests to TMDB or act as an external API proxy.
+`proxy.ts` lets everyone open the landing page, `/list`, `/movie/[id]`, `/tv/[id]`, the sitemap, and the account pages. Other routes redirect visitors without a `better-auth.session_token` (or HTTPS-prefixed `__Secure-better-auth.session_token`) cookie to `/signin`. Requests to `/signin` with that cookie continue to a validated same-site `next` path, or `/list`. This is a routing check; preference writes perform a separate server-side session validation and reject guests. It does not forward requests to TMDB or act as an external API proxy.
 
 Catalog operations use Server Actions and shared server-side helpers. The app's HTTP API route is the Better Auth handler; it does not expose a separate public movie REST API.
 
@@ -109,6 +111,7 @@ SMTP_FROM_EMAIL="Q-Watcher <notifications@example.com>"
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE` | SMTP server and transport settings. |
 | `SMTP_USER`, `SMTP_PASSWORD` | Server-only SMTP credentials. |
 | `SMTP_FROM_EMAIL` | Sender address, optionally including a display name. |
+| `DEMO_USER_EMAIL`, `DEMO_USER_PASSWORD` | Optional shared demo account. When both are set, the demo button appears. Use an address you do not need for email, such as `demo@example.com`, and a long random password. Leave them unset to hide the demo. |
 
 Use port **465** with `SMTP_SECURE=true` for implicit TLS. If your provider specifies STARTTLS, use port **587** with `SMTP_SECURE=false`; the app requires the TLS upgrade and validates certificates.
 
@@ -147,6 +150,23 @@ npm run db:seed
 
 The seed script preserves existing users. Use the same password requirements as the sign-up form: 10–128 characters, including uppercase and lowercase letters, a number, and a special character.
 
+## Demo account
+
+Set `DEMO_USER_EMAIL` and `DEMO_USER_PASSWORD`, run `npm run db:migrate`, then optionally create the account straight away:
+
+```sh
+npm run demo:reset
+```
+
+The **Try the demo account** buttons sign visitors in on the server; the password is never sent to the browser. The account is created on first use if it does not exist.
+
+Resetting restores the demo user's name, password, and sample lists, and removes its expired sessions. It runs:
+
+- **Automatically**, when someone starts a demo session and the last reset is more than 24 hours old. This needs no scheduled job.
+- **On a schedule**, if you add a cron job that runs `npm run demo:reset` from the project directory, for example nightly. This keeps the demo fresh even for visitors who stay signed in.
+
+Better Auth hooks reject changing the demo account's email, password, profile, or sessions, deleting it, and requesting password-reset or verification emails for it.
+
 ## Authentication and email
 
 New accounts must verify their email before signing in. Existing unverified accounts can request another link at `/verify-email`. Forgotten-password requests start at `/forgot-password`, and reset links open `/reset-password`.
@@ -160,9 +180,9 @@ To check delivery, register with an inbox you control, verify the account, reque
 | Route | Purpose |
 | --- | --- |
 | `/` | Public landing page |
-| `/list` | Catalog, search, genre/type filters, and personal lists |
-| `/movie/[id]` | Movie details, trailers, watch statuses, and personal rating |
-| `/tv/[id]` | TV details, trailers, watch statuses, and personal rating |
+| `/list` | Public catalog, search, and genre/type filters; personal lists after logging in |
+| `/movie/[id]` | Public movie details and trailers; watch statuses and personal rating after logging in |
+| `/tv/[id]` | Public TV details and trailers; watch statuses and personal rating after logging in |
 | `/signup`, `/signin` | Account registration and sign-in |
 | `/login` | Redirect to `/signin` |
 | `/verify-email` | Request another verification email |
@@ -185,8 +205,9 @@ Genre filtering applies to discovery and saved lists. Catalog text searches use 
 | `npm test` | Run the automated tests; database integration checks are skipped by default |
 | `npm run db:migrate` | Create missing database tables |
 | `npm run db:seed` | Create an optional verified local user |
+| `npm run demo:reset` | Create or reset the optional shared demo account |
 
-Tests cover browsing-state restoration, TMDB request behavior and trailers, password validation, email handling, proxy redirects, and optional database integration.
+Tests cover browsing-state restoration, TMDB request behavior and trailers, password validation, email handling, public routes and proxy redirects, safe post-login redirects, demo-account settings, and optional database integration.
 
 To include the MariaDB integration check on Linux or WSL:
 
@@ -217,7 +238,7 @@ components/           Shared UI and interactive controls
 db/migrations/        MariaDB schema migrations
 lib/                  TMDB, authentication, database, email, and browsing helpers
 tests/                Unit tests and optional MariaDB integration check
-proxy.ts              Session-cookie routing and redirects
+proxy.ts              Public-route checks and authentication redirects
 ```
 
 ## Production setup

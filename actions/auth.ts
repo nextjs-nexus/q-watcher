@@ -5,7 +5,10 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { auth } from "../lib/auth";
+import { getDemoConfig } from "../lib/demo";
+import { ensureFreshDemoAccount } from "../lib/demo-account";
 import { isValidPassword, PASSWORD_REQUIREMENTS } from "../lib/password-policy";
+import { getSafeRedirectPath } from "../lib/redirect";
 
 export type SignInState = {
   error: string | null;
@@ -47,6 +50,7 @@ export async function signInAction(
 ): Promise<SignInState> {
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
+  const nextPath = getSafeRedirectPath(formData.get("next"));
 
   try {
     await auth.api.signInEmail({
@@ -63,7 +67,32 @@ export async function signInAction(
     };
   }
 
-  redirect("/list");
+  redirect(nextPath);
+}
+
+export async function demoSignInAction(formData: FormData) {
+  const nextPath = getSafeRedirectPath(formData.get("next"));
+  const config = getDemoConfig();
+
+  if (!config) {
+    redirect("/signin?demo=unavailable");
+  }
+
+  try {
+    await ensureFreshDemoAccount(config);
+    await auth.api.signInEmail({
+      body: {
+        email: config.email,
+        password: config.password,
+      },
+      headers: await headers(),
+    });
+  } catch (error) {
+    console.error("Demo sign-in failed:", error);
+    redirect("/signin?demo=unavailable");
+  }
+
+  redirect(nextPath);
 }
 
 export async function signOutAction() {

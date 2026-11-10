@@ -10,11 +10,12 @@ const initialState: SignInState = {
   error: null,
 };
 
-export default function SignInForm() {
+export default function SignInForm({ next }: { next: string }) {
   const [state, formAction, isPending] = useActionState(signInAction, initialState);
 
   return (
     <form action={formAction} className="flex flex-col space-y-6">
+      <input type="hidden" name="next" value={next} />
       {state.error && (
         <div
           role="alert"

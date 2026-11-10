@@ -7,6 +7,7 @@ import { Star, Clock, Calendar, Film } from 'lucide-react';
 import UserNav from '@/components/UserNav';
 import MediaPreferenceControls from '@/components/MediaPreferenceControls';
 import { getCurrentUserMediaPreference } from '@/lib/media-preferences';
+import { getViewer } from '@/lib/session';
 import BackButton from '@/components/BackButton';
 
 type Props = {
@@ -17,10 +18,11 @@ type Props = {
 export default async function MoviePage({ params, searchParams }: Props) {
   const { id } = await params;
   const returnTo = getListUrl((await searchParams).returnTo ?? null);
-  const [movie, preference, trailers] = await Promise.all([
+  const [movie, preference, trailers, viewer] = await Promise.all([
     getMovie(id),
     getCurrentUserMediaPreference('movie', Number(id)),
     getMediaTrailers(id, 'movie'),
+    getViewer(),
   ]);
 
   const imageBaseUrl = 'https://image.tmdb.org/t/p/w500';
@@ -137,6 +139,7 @@ export default async function MoviePage({ params, searchParams }: Props) {
               posterPath={movie.poster_path || null}
               releaseDate={movie.release_date || null}
               initialPreference={preference}
+              viewer={viewer}
             />
           </div>
         </div>

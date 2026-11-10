@@ -5,6 +5,8 @@ import { useState, useTransition } from 'react';
 import { Bookmark, Check, CheckCircle2, Star, X } from 'lucide-react';
 import { saveMediaPreference } from '@/actions/media-preferences';
 import type { MediaPreference, MediaType } from '@/lib/media-preferences';
+import type { Viewer } from '@/lib/viewer';
+import GuestNotice from './GuestNotice';
 
 type MediaPreferenceControlsProps = {
   tmdbId: number;
@@ -13,6 +15,7 @@ type MediaPreferenceControlsProps = {
   posterPath: string | null;
   releaseDate: string | null;
   initialPreference: MediaPreference;
+  viewer: Viewer;
 };
 
 export default function MediaPreferenceControls({
@@ -22,12 +25,20 @@ export default function MediaPreferenceControls({
   posterPath,
   releaseDate,
   initialPreference,
+  viewer,
 }: MediaPreferenceControlsProps) {
   const [preference, setPreference] = useState(initialPreference);
   const [message, setMessage] = useState<string | null>(null);
+  const [showGuestNotice, setShowGuestNotice] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   const save = (nextPreference: MediaPreference) => {
+    if (!viewer.signedIn) {
+      // Guests can see the controls, but saving needs an account.
+      setShowGuestNotice(true);
+      return;
+    }
+
     const previousPreference = preference;
     setPreference(nextPreference);
     setMessage(null);
@@ -61,8 +72,15 @@ export default function MediaPreferenceControls({
           Your activity
         </h2>
         <p className="text-sm leading-relaxed text-[#A0B3A8]">
-          Keep both lists active if you plan to watch this title again.
+          {viewer.signedIn
+            ? 'Keep both lists active if you plan to watch this title again.'
+            : 'Log in to add this title to your lists and rate it.'}
         </p>
+        {viewer.isDemo && (
+          <p className="text-sm leading-relaxed text-[#00FFC6]">
+            You are using the shared demo account. Its lists reset every day.
+          </p>
+        )}
       </div>
 
       <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -149,6 +167,7 @@ export default function MediaPreferenceControls({
       </div>
 
       <div className="mt-4 min-h-5" aria-live="polite">
+        {showGuestNotice && <GuestNotice demoAvailable={viewer.demoAvailable} />}
         {message && (
           <p className={`flex items-center gap-1.5 text-sm ${message === 'Saved' ? 'text-[#B6FF3C]' : 'text-red-400'}`}>
             {message === 'Saved' && <Star size={14} fill="currentColor" />}

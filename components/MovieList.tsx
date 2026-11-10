@@ -7,10 +7,12 @@ import MovieDetail from './MovieDetail';
 import { Loader2 } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { readBrowsingState, saveBrowsingState } from '@/lib/browsing-state';
+import type { Viewer } from '@/lib/viewer';
 
 interface MovieListProps {
   initialMovies: Movie[];
   initialTotalPages: number;
+  viewer: Viewer;
   actor?: string;
   query?: string;
   genre?: string;
@@ -21,6 +23,7 @@ interface MovieListProps {
 export default function MovieList({
   initialMovies,
   initialTotalPages,
+  viewer,
   actor = '',
   query = '',
   genre = '',
@@ -178,6 +181,7 @@ export default function MovieList({
           <MovieDetail
             key={`${movie.media_type || 'movie'}-${movie.id}`}
             movie={movie}
+            viewer={viewer}
             eager={index < 6}
             returnTo={listUrl}
             onNavigate={rememberBrowsing}

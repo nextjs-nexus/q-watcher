@@ -7,6 +7,7 @@ import { Calendar, Clock, Star, Tv } from 'lucide-react';
 import UserNav from '@/components/UserNav';
 import MediaPreferenceControls from '@/components/MediaPreferenceControls';
 import { getCurrentUserMediaPreference } from '@/lib/media-preferences';
+import { getViewer } from '@/lib/session';
 import BackButton from '@/components/BackButton';
 
 type Props = {
@@ -17,10 +18,11 @@ type Props = {
 export default async function TVShowPage({ params, searchParams }: Props) {
   const { id } = await params;
   const returnTo = getListUrl((await searchParams).returnTo ?? null);
-  const [show, preference, trailers] = await Promise.all([
+  const [show, preference, trailers, viewer] = await Promise.all([
     getTVShow(id),
     getCurrentUserMediaPreference('tv', Number(id)),
     getMediaTrailers(id, 'tv'),
+    getViewer(),
   ]);
   const imageBase = 'https://image.tmdb.org/t/p/w500';
   const backdropBase = 'https://image.tmdb.org/t/p/original';
@@ -136,6 +138,7 @@ export default async function TVShowPage({ params, searchParams }: Props) {
               posterPath={show.poster_path || null}
               releaseDate={show.release_date || null}
               initialPreference={preference}
+              viewer={viewer}
             />
           </div>
         </div>

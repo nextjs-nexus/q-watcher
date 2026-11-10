@@ -1,11 +1,10 @@
 'use server';
 
-import { headers } from 'next/headers';
 import { revalidatePath } from 'next/cache';
-import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import type { MediaPreference, MediaType } from '@/lib/media-preferences';
 import { getCurrentUserMediaPreference } from '@/lib/media-preferences';
+import { getCurrentUser } from '@/lib/session';
 
 type SaveMediaPreferenceInput = MediaPreference & {
   tmdbId: number;
@@ -31,12 +30,10 @@ export async function markMediaPreference(
 export async function saveMediaPreference(
   input: SaveMediaPreferenceInput
 ): Promise<MediaPreference> {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const user = await getCurrentUser();
 
-  if (!session?.user?.id) {
-    throw new Error('You must be signed in to save this title.');
+  if (!user?.id) {
+    throw new Error('Log in to save titles to your lists.');
   }
 
   if (!Number.isInteger(input.tmdbId) || input.tmdbId <= 0) {
@@ -82,7 +79,7 @@ export async function saveMediaPreference(
        user_rating = VALUES(user_rating),
        updated_at = NOW()`,
     [
-      session.user.id,
+      user.id,
       input.tmdbId,
       input.mediaType,
       title,

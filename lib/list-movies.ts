@@ -1,9 +1,8 @@
 import 'server-only';
 
-import { headers } from 'next/headers';
-import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { addCurrentUserPreferences } from '@/lib/media-preferences';
+import { getCurrentUser } from '@/lib/session';
 import { fetchMovies, getActorCredits, getMovie, getTVShow, type FetchMoviesResult, type Movie } from '@/lib/tmdb';
 
 export type ListCriteria = {
@@ -34,8 +33,8 @@ export async function fetchListMovies({ actor = '', query = '', genre = '', type
         return { ...result, movies: await addCurrentUserPreferences(result.movies) };
     }
 
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (!session?.user?.id) {
+    const user = await getCurrentUser();
+    if (!user?.id) {
         return { movies: [], totalPages: 1, totalResults: 0, page };
     }
 
@@ -54,7 +53,7 @@ export async function fetchListMovies({ actor = '', query = '', genre = '', type
            AND (? = '0' OR media_type = ?)
            AND (? = '' OR POSITION(LOWER(?) IN LOWER(title)) > 0)
          ORDER BY updated_at DESC, media_type, tmdb_id`,
-        [session.user.id, status, status, type, type === '2' ? 'tv' : 'movie', credits ? '' : query.trim(), credits ? '' : query.trim()]
+        [user.id, status, status, type, type === '2' ? 'tv' : 'movie', credits ? '' : query.trim(), credits ? '' : query.trim()]
     );
 
     if (credits) {

@@ -1,8 +1,7 @@
 import 'server-only';
 
-import { headers } from 'next/headers';
-import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
+import { getCurrentUser } from '@/lib/session';
 import type { Movie } from '@/lib/tmdb';
 
 export type MediaType = 'movie' | 'tv';
@@ -23,11 +22,9 @@ export async function getCurrentUserMediaPreference(
   mediaType: MediaType,
   tmdbId: number
 ): Promise<MediaPreference> {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const user = await getCurrentUser();
 
-  if (!session?.user?.id) {
+  if (!user?.id) {
     return emptyPreference;
   }
 
@@ -39,7 +36,7 @@ export async function getCurrentUserMediaPreference(
     `SELECT to_watch, watched, user_rating
      FROM user_media_preferences
      WHERE user_id = ? AND tmdb_id = ? AND media_type = ?`,
-    [session.user.id, tmdbId, mediaType]
+    [user.id, tmdbId, mediaType]
   );
 
   const preference = result.rows[0];
@@ -59,11 +56,9 @@ export async function addCurrentUserPreferences(movies: Movie[]): Promise<Movie[
     return movies;
   }
 
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const user = await getCurrentUser();
 
-  if (!session?.user?.id) {
+  if (!user?.id) {
     return movies;
   }
 
@@ -81,7 +76,7 @@ export async function addCurrentUserPreferences(movies: Movie[]): Promise<Movie[
      FROM user_media_preferences AS preferences
      WHERE preferences.user_id = ?
        AND (preferences.media_type, preferences.tmdb_id) IN (${requestedTitles})`,
-    [session.user.id, ...movies.flatMap((movie) => [movie.media_type || 'movie', movie.id])]
+    [user.id, ...movies.flatMap((movie) => [movie.media_type || 'movie', movie.id])]
   );
 
   const preferences = new Map(

@@ -10,7 +10,8 @@
     "lint": "eslint",
     "test": "node --import tsx --test tests/*.test.ts",
     "db:migrate": "tsx lib/migrate.ts",
-    "db:seed": "tsx lib/seed-user.ts"
+    "db:seed": "tsx lib/seed-user.ts",
+    "demo:reset": "tsx lib/reset-demo.ts"
   },
   "dependencies": {
     "@types/bcryptjs": "^2.4.6",

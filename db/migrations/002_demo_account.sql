@@ -1,0 +1,5 @@
+CREATE TABLE IF NOT EXISTS demo_account_resets (
+  id TINYINT NOT NULL,
+  reset_at DATETIME(6) NOT NULL,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
