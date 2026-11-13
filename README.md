@@ -115,7 +115,7 @@ SMTP_FROM_EMAIL="Q-Watcher <notifications@example.com>"
 
 Use port **465** with `SMTP_SECURE=true` for implicit TLS. If your provider specifies STARTTLS, use port **587** with `SMTP_SECURE=false`; the app requires the TLS upgrade and validates certificates.
 
-The current code does not use `NEXT_PUBLIC_TMDB_API_READ_ACCESS_TOKEN`, `RESEND_API_KEY`, or `RESEND_FROM_EMAIL`, even though they appear in `.env.example`. Authentication emails use SMTP.
+The current code does not use `TMDB_API_READ_ACCESS_TOKEN`, `RESEND_API_KEY`, or `RESEND_FROM_EMAIL`, even though they appear in `.env.example`. Authentication emails use SMTP.
 
 Set `TMDB_API_KEY` in your deployment environment before building or starting the app. If you previously used `NEXT_PUBLIC_TMDB_API_KEY`, remove it from the deployment configuration and consider rotating the key because it may have been exposed in earlier builds.
 

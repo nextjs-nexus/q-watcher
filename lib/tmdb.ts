@@ -1,4 +1,3 @@
-const API_KEY = process.env.TMDB_API_KEY;
 const BASE_URL = 'https://api.themoviedb.org/3';
 
 export interface Movie {
@@ -87,10 +86,11 @@ export async function getActorCredits(actor: string, type = '0'): Promise<Movie[
 }
 
 async function fetchFromTMDB(endpoint: string, page: number = 1) {
-    if (!API_KEY) throw new Error('API Key is missing');
+    const apiKey = process.env.TMDB_API_KEY;
+    if (!apiKey) throw new Error('TMDB_API_KEY is missing from the server environment');
 
     const separator = endpoint.includes('?') ? '&' : '?';
-    const url = `${BASE_URL}${endpoint}${separator}api_key=${API_KEY}&language=en-US&page=${page}`;
+    const url = `${BASE_URL}${endpoint}${separator}api_key=${apiKey}&language=en-US&page=${page}`;
 
     const res = await fetch(url, { next: { revalidate: 3600 } });
 
