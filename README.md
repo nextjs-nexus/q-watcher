@@ -87,7 +87,7 @@ Replace the placeholders with your own values:
 
 ```dotenv
 DATABASE_URL=mysql://local-user:your-password@127.0.0.1:3306/q_watcher
-NEXT_PUBLIC_TMDB_API_KEY=your-tmdb-api-key
+TMDB_API_KEY=your-tmdb-api-key
 
 BETTER_AUTH_URL=http://localhost:3000
 BETTER_AUTH_SECRET=replace-with-a-long-random-secret
@@ -104,7 +104,7 @@ SMTP_FROM_EMAIL="Q-Watcher <notifications@example.com>"
 | Variable | Purpose |
 | --- | --- |
 | `DATABASE_URL` | Server-only MariaDB connection URL. URL-encode special characters in connection credentials. |
-| `NEXT_PUBLIC_TMDB_API_KEY` | TMDB API key used by the catalog fetch helper. The existing name uses the public prefix, so do not treat it as a server-only secret. |
+| `TMDB_API_KEY` | Server-only TMDB API key used by the catalog fetch helper. |
 | `BETTER_AUTH_URL` | Base URL for authentication. Set it to the actual application origin and port. |
 | `BETTER_AUTH_SECRET` | A long, randomly generated authentication secret. |
 | `NEXT_PUBLIC_APP_URL` | Application URL used by client-side authentication requests. |
@@ -116,6 +116,8 @@ SMTP_FROM_EMAIL="Q-Watcher <notifications@example.com>"
 Use port **465** with `SMTP_SECURE=true` for implicit TLS. If your provider specifies STARTTLS, use port **587** with `SMTP_SECURE=false`; the app requires the TLS upgrade and validates certificates.
 
 The current code does not use `NEXT_PUBLIC_TMDB_API_READ_ACCESS_TOKEN`, `RESEND_API_KEY`, or `RESEND_FROM_EMAIL`, even though they appear in `.env.example`. Authentication emails use SMTP.
+
+Set `TMDB_API_KEY` in your deployment environment before building or starting the app. If you previously used `NEXT_PUBLIC_TMDB_API_KEY`, remove it from the deployment configuration and consider rotating the key because it may have been exposed in earlier builds.
 
 Keep `.env.local` private. Database credentials, SMTP credentials, and the authentication secret belong only in server-side environment variables. Restart the development server after changing configuration.
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
-import { Movie } from '@/lib/tmdb';
+import type { Movie } from '@/lib/tmdb';
 import { loadMoreMoviesAction, refreshListPreferencesAction } from '@/actions/movies';
 import MovieDetail from './MovieDetail';
 import { Loader2 } from 'lucide-react';

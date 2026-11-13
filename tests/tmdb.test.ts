@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { before, test } from 'node:test';
 
-process.env.NEXT_PUBLIC_TMDB_API_KEY = 'test-key';
+process.env.TMDB_API_KEY = 'test-key';
 let getActorCredits: typeof import('../lib/tmdb').getActorCredits;
 let searchActors: typeof import('../lib/tmdb').searchActors;
 let fetchMovies: typeof import('../lib/tmdb').fetchMovies;

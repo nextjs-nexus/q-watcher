@@ -1,6 +1,6 @@
 'use server';
 
-import { FetchMoviesResult } from '@/lib/tmdb';
+import type { FetchMoviesResult } from '@/lib/tmdb';
 import { fetchListMovies } from '@/lib/list-movies';
 import { addCurrentUserPreferences } from '@/lib/media-preferences';
 

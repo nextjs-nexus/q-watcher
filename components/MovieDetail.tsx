@@ -6,7 +6,7 @@ import type { Viewer } from '@/lib/viewer';
 import Image from 'next/image';
 import Link from 'next/link';
 import { CircleUserRound, Star } from 'lucide-react';
-import { Movie } from '@/lib/tmdb';
+import type { Movie } from '@/lib/tmdb';
 import MovieDetailPreferenceControls from './MovieDetailPreferenceControls';
 
 interface MovieCardProps {
